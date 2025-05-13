@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Noor - Interactive Reader v4</title>
+    <style>
+        /* CSS Styles remain unchanged - included for completeness */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .pane {
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .controls-pane {
+            width: 300px;
+            background-color: #e9ecef;
+            border-right: 1px solid #ced4da;
+            flex-shrink: 0;
+        }
+
+        .reader-pane {
+            flex-grow: 1;
+            background-color: #ffffff;
+        }
+
+        .notes-pane {
+            width: 350px;
+            background-color: #f8f9fa;
+            border-left: 1px solid #ced4da;
+            flex-shrink: 0;
+        }
+        .notes-pane-content {
+             flex-grow: 1;
+             overflow-y: auto;
+        }
+
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.4em;
+            color: #007bff;
+        }
+
+        h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #495057;
+        }
+
+        h4 {
+            margin-top: 15px;
+            margin-bottom: 8px;
+            font-size: 1em;
+            color: #343a40;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        textarea, input[type="text"], input[type="search"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+         input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        /* Improved Load Text Textarea Style */
+         textarea#textInputArea {
+            height: 200px; /* Set a default comfortable height */
+            min-height: 150px;
+            resize: vertical; /* Allow user to resize it *only* vertically */
+            overflow-y: auto !important; /* Force vertical scrollbar when content overflows */
+            white-space: pre-wrap; /* Preserve pasted newlines and wrap long lines */
+            word-wrap: break-word; /* Help prevent horizontal scrolling */
+            box-sizing: border-box; /* Ensures padding/border are within width/height */
+        }
+
+
+        button {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px 2px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #adb5bd;
+            cursor: not-allowed;
+        }
+
+        .small-button {
+             padding: 3px 8px;
+             font-size: 0.8em;
+             margin-left: 8px;
+             background-color: #6c757d;
+        }
+        .small-button:hover {
+             background-color: #5a6268;
+        }
+        button.cancel-button { /* Specific style for cancel buttons in modals/forms */
+             background-color: #6c757d;
+        }
+         button.cancel-button:hover {
+             background-color: #5a6268;
+        }
+
+        #mainReadingArea {
+            padding: 15px;
+            font-size: 1.1em;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            min-height: 200px;
+             flex-grow: 1;
+             overflow-y: auto;
+        }
+
+        #segmentStatus {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .speech-controls button, .nav-controls button {
+            width: calc(50% - 6px);
+        }
+        #readButton { width: 100%; margin-bottom: 5px; }
+
+        /* Enhanced Notes Styling */
+        #notesContainer .note-item {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        .note-item .note-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #adb5bd;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+         .note-item .note-meta .note-id {
+            font-weight: bold;
+         }
+        #notesContainer .note-item strong {
+            color: #343a40;
+            font-weight: 600;
+        }
+        #notesContainer .note-item em {
+            color: #495057;
+            font-style: italic;
+            display: block;
+            margin-top: 3px;
+        }
+         .note-content {
+            color: #212529;
+            line-height: 1.5;
+         }
+         .note-tags, .note-links {
+            margin-top: 8px;
+            font-size: 0.85em;
+         }
+         .note-tags span, .note-links span {
+            display: inline-block;
+            background-color: #adb5bd;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 5px;
+            margin-bottom: 3px;
+         }
+        .note-links span {
+            background-color: #17a2b8;
+            cursor: pointer;
+        }
+        .note-links span:hover {
+            background-color: #138496;
+        }
+
+
+        .highlighted-note-text {
+            background-color: #fff9db;
+            padding: 0.1em 0;
+            border-radius: 2px;
+            box-shadow: 0 0 0 1px #ffeeba;
+            cursor: pointer;
+        }
+
+        #selectionActionPopup {
+            position: absolute;
+            background-color: #343a40;
+            color: white;
+            border: 1px solid #495057;
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+        }
+        #selectionActionPopup button {
+            background-color: #495057;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        #selectionActionPopup button:hover {
+            background-color: #6c757d;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 { margin-top: 0; color: #007bff; }
+        .modal-content #selectedTextDisplay,
+        .modal-content #noteSelectedTextPreview {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-style: italic;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .modal-content #questionInput,
+        .modal-content #noteTextArea {
+             min-height: 80px;
+             resize: vertical;
+        }
+        .modal-content #noteTagsInput {
+             margin-bottom: 15px;
+        }
+        .modal-content #answerDisplayArea {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            min-height: 50px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #answerDisplayArea .api-error-message {
+            color: #dc3545;
+            font-weight: bold;
+        }
+         #answerDisplayArea .api-warning-message {
+            color: #ffc107;
+            font-weight: bold;
+         }
+         #answerDisplayArea .api-loading-message {
+            color: #6c757d;
+            font-style: italic;
+         }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        .apiKeyStatus { /* Common class for API key status divs */
+            font-size: 0.85em;
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .apiKeyStatus.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .apiKeyStatus.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .apiKeyStatus.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        #apiKeyStatus { /* Specific ID for Gemini API key status */
+            /* Inherits .apiKeyStatus styles */
+        }
+         #googleTtsApiKeyStatus { /* Specific ID for Google TTS API key status */
+            /* Inherits .apiKeyStatus styles */
+        }
+
+
+    </style>
+</head>
+<body>
+    <audio id="cloudAudioPlayer" style="display: none;"></audio>
+
+    <div class="app-container">
+        <div class="pane controls-pane">
+            <h2>Controls</h2>
+
+            <h3>Load Text</h3>
+            <textarea id="textInputArea" placeholder="Paste your text here..."></textarea>
+            <button id="loadTextButton">Load & Prepare Text</button>
+
+            <h3>Playback</h3>
+            <div class="speech-controls">
+                <button id="readButton">Read Aloud</button>
+                <button id="pauseButton" disabled>Pause</button>
+                <button id="resumeButton" disabled>Resume</button>
+            </div>
+            <div id="ttsSettings" style="margin-top:15px; border-top: 1px solid #ced4da; padding-top: 15px;">
+                <h4>Audio Settings (Cloud TTS)</h4>
+                <!-- <label for="voiceSelect">Voice:</label> <select id="voiceSelect"></select> NO LONGER USED -->
+                <label for="rateSlider">Rate:</label>
+                <input type="range" id="rateSlider" min="0.5" max="2" value="1" step="0.1">
+                <span id="rateValue" style="display: block; text-align: center; margin-bottom:10px;">1.0</span>
+                <label for="pitchSlider">Pitch:</label>
+                <input type="range" id="pitchSlider" min="0" max="2" value="1" step="0.1">
+                <span id="pitchValue" style="display: block; text-align: center;">1.0</span>
+            </div>
+
+            <h3>Navigation</h3>
+            <div class="nav-controls">
+                <button id="prevButton" disabled>Previous Paragraph</button>
+                <button id="nextButton" disabled>Next Paragraph</button>
+            </div>
+            <div id="segmentStatus">No text loaded.</div>
+
+            <div style="margin-top:15px; border-top: 1px solid #ced4da; padding-top: 15px;">
+                <h3>AI Configuration (Noor - Q&A)</h3>
+                <label for="geminiApiKeyInput">Gemini API Key:</label>
+                <input type="text" id="geminiApiKeyInput" placeholder="Enter your Gemini API Key">
+                <button id="setGeminiApiKeyButton" style="width:100%;">Set Gemini API Key</button>
+                <div id="apiKeyStatus" class="apiKeyStatus"></div>
+            </div>
+
+            <div id="googleTtsApiSettings" style="margin-top:15px; border-top: 1px solid #ced4da; padding-top: 15px;">
+                <h4>Google Cloud TTS Settings</h4>
+                <label for="googleTtsApiKeyInput">Cloud TTS API Key:</label>
+                <input type="text" id="googleTtsApiKeyInput" placeholder="Enter Google Cloud TTS API Key">
+                <button id="setGoogleTtsApiKeyButton" style="width:100%;">Set Cloud TTS Key</button>
+                <div id="googleTtsApiKeyStatus" class="apiKeyStatus"></div>
+            </div>
+
+
+            <button id="clearStoredDataButton" style="background-color: #dc3545; width:100%; margin-top:20px;">Clear All Stored Data</button>
+        </div>
+
+        <div class="pane reader-pane">
+            <h2>Reading Area</h2>
+            <div id="mainReadingArea" aria-live="polite">
+                Welcome to Project Noor. Please load some text using the controls on the left.
+            </div>
+        </div>
+
+        <div class="pane notes-pane">
+             <h2>My Notes</h2>
+             <input type="search" id="searchNotesInput" placeholder="Search notes & tags...">
+             <div id="notesContainer" class="notes-pane-content">
+                <p>Your notes will appear here. Add notes by selecting text in the reading area.</p>
+             </div>
+        </div>
+    </div>
+
+    <div id="selectionActionPopup">
+        <button id="askQuestionButton">Ask Noor...</button>
+        <button id="addNoteButton">Add Note</button>
+    </div>
+
+    <div id="qaModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeQaModal">&times;</span>
+            <h3>Ask Noor a Question</h3>
+            <p><strong>Selected Text:</strong></p>
+            <div id="selectedTextDisplay"></div>
+            <textarea id="questionInput" placeholder="Type your question about the selection..."></textarea>
+            <button id="submitQuestionButton">Submit Question</button>
+            <h4>Answer:</h4>
+            <div id="answerDisplayArea"></div>
+        </div>
+    </div>
+
+    <div id="noteInputModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeNoteInputModal">&times;</span>
+            <h3>Add Note</h3> <p><strong>Selected Text:</strong></p>
+            <div id="noteSelectedTextPreview"></div>
+            <label for="noteTextArea">Your Note:</label>
+            <textarea id="noteTextArea" rows="5" placeholder="Type your detailed note here..."></textarea>
+            <label for="noteTagsInput">Tags (comma-separated):</label>
+            <input type="text" id="noteTagsInput" placeholder="e.g., key idea, character, research">
+            <button id="saveNoteButton" style="margin-top: 15px;">Save Note</button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Global Variables ---
+            let textSegments = [];
+            let currentSegmentIdx = 0;
+            // let currentSpeechUtterance = null; // No longer used for browser TTS
+            let currentSelection = null;
+            let tempNoteSelectionText = null;
+            let tempNoteSelectionRange = null;
+            let noteHighlightCounter = 0;
+            let userNotes = JSON.parse(localStorage.getItem('projectNoorUserNotes')) || [];
+            let geminiApiKey = localStorage.getItem('projectNoorGeminiApiKey') || '';
+            let googleTtsApiKey = localStorage.getItem('projectNoorGoogleTtsApiKey') || '';
+
+
+            const PRE_POPULATED_TEXT = `Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. Whenever I find myself growing grim about the mouth; whenever it is a damp, drizzly November in my soul; whenever I find myself involuntarily pausing before coffin warehouses, and bringing up the rear of every funeral I meet; and especially whenever my hypos get such an upper hand of me, that it requires a strong moral principle to prevent me from deliberately stepping into the street, and methodically knocking people’s hats off—then, I account it high time to get to sea as soon as I can. This is my substitute for pistol and ball. With a philosophical flourish Cato throws himself upon his sword; I quietly take to the ship.
+
+There is nothing surprising in this. If they but knew it, almost all men in their degree, some time or other, cherish very nearly the same feelings towards the ocean with me.
+
+There now is your insular city of the Manhattoes, belted round by wharves as Indian isles by coral reefs—commerce surrounds it with her surf. Right and left, the streets take you waterward. Its extreme downtown is the battery, where that noble mole is washed by waves, and cooled by breezes,
+which a few hours previous were out of sight of land. Look at the crowds of water-gazers there.`;
+
+
+            // --- DOM Elements ---
+            const textInputArea = document.getElementById('textInputArea');
+            const loadTextButton = document.getElementById('loadTextButton');
+            const mainReadingArea = document.getElementById('mainReadingArea');
+            const segmentStatus = document.getElementById('segmentStatus');
+            const readButton = document.getElementById('readButton');
+            const pauseButton = document.getElementById('pauseButton');
+            const resumeButton = document.getElementById('resumeButton');
+            // const voiceSelect = document.getElementById('voiceSelect'); // No longer primary
+            const rateSlider = document.getElementById('rateSlider');
+            const rateValue = document.getElementById('rateValue');
+            const pitchSlider = document.getElementById('pitchSlider');
+            const pitchValue = document.getElementById('pitchValue');
+            const prevButton = document.getElementById('prevButton');
+            const nextButton = document.getElementById('nextButton');
+            const selectionActionPopup = document.getElementById('selectionActionPopup');
+            const askQuestionButton = document.getElementById('askQuestionButton');
+            const addNoteButton = document.getElementById('addNoteButton');
+            const qaModal = document.getElementById('qaModal');
+            const closeQaModalButton = document.getElementById('closeQaModal');
+            const selectedTextDisplay = document.getElementById('selectedTextDisplay');
+            const questionInput = document.getElementById('questionInput');
+            const submitQuestionButton = document.getElementById('submitQuestionButton');
+            const answerDisplayArea = document.getElementById('answerDisplayArea');
+            const noteInputModal = document.getElementById('noteInputModal');
+            const closeNoteInputModalButton = document.getElementById('closeNoteInputModal');
+            const noteSelectedTextPreview = document.getElementById('noteSelectedTextPreview');
+            const noteTextArea = document.getElementById('noteTextArea');
+            const noteTagsInput = document.getElementById('noteTagsInput');
+            const saveNoteButton = document.getElementById('saveNoteButton');
+            const notesContainer = document.getElementById('notesContainer');
+            const searchNotesInput = document.getElementById('searchNotesInput');
+            const clearStoredDataButton = document.getElementById('clearStoredDataButton');
+
+            // Gemini API Key Elements
+            const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+            const setGeminiApiKeyButton = document.getElementById('setGeminiApiKeyButton');
+            const apiKeyStatusDiv = document.getElementById('apiKeyStatus');
+
+            // Google Cloud TTS API Key Elements
+            const googleTtsApiKeyInput = document.getElementById('googleTtsApiKeyInput');
+            const setGoogleTtsApiKeyButton = document.getElementById('setGoogleTtsApiKeyButton');
+            const googleTtsApiKeyStatusDiv = document.getElementById('googleTtsApiKeyStatus');
+            const cloudAudioPlayer = document.getElementById('cloudAudioPlayer');
+
+
+            // --- Helper Functions ---
+            function escapeHtml(unsafe) {
+                if (!unsafe) return "";
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+            function saveNotes() {
+                localStorage.setItem('projectNoorUserNotes', JSON.stringify(userNotes));
+            }
+            function updateApiStatus(element, message, type = 'info') {
+                element.textContent = message;
+                element.className = `apiKeyStatus ${type}`;
+            }
+
+
+            // --- Text Input & Management ---
+            function loadText() {
+                stopReadingCloudTTS(); // Stop any TTS before loading new text
+                const rawText = textInputArea.value.trim();
+                // speechSynthesis.cancel(); // No longer using browser's synthesis
+                if (!rawText) {
+                    mainReadingArea.innerHTML = "Please paste some text to load.";
+                    segmentStatus.textContent = "No text loaded.";
+                    textSegments = [];
+                    currentSegmentIdx = 0;
+                    updateNavigationButtons();
+                    updateSpeechButtonStatesCloudTTS(false, false); // Update for Cloud TTS
+                    renderAllNotes();
+                    return;
+                }
+                textSegments = rawText.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+                if (textSegments.length === 0) {
+                    mainReadingArea.innerHTML = "No readable paragraphs found in the text.";
+                    segmentStatus.textContent = "No text loaded.";
+                    currentSegmentIdx = 0;
+                    updateNavigationButtons();
+                    updateSpeechButtonStatesCloudTTS(false, false); // Update for Cloud TTS
+                    renderAllNotes();
+                    return;
+                }
+                currentSegmentIdx = 0;
+                localStorage.setItem('projectNoorTextSegments', JSON.stringify(textSegments));
+                localStorage.setItem('projectNoorCurrentSegmentIdx', currentSegmentIdx.toString());
+                showSegment(currentSegmentIdx);
+                renderAllNotes();
+            }
+
+            function showSegment(index) {
+                if (index < 0 || index >= textSegments.length) return;
+                stopReadingCloudTTS(); // Stop TTS when changing segments
+                // speechSynthesis.cancel(); // No longer using browser's synthesis
+                // updateSpeechButtonStates(false); // Old function
+                currentSegmentIdx = index;
+                mainReadingArea.innerHTML = applyHighlightsToSegment(textSegments[currentSegmentIdx], currentSegmentIdx);
+                segmentStatus.textContent = `Paragraph ${currentSegmentIdx + 1} of ${textSegments.length}`;
+                localStorage.setItem('projectNoorCurrentSegmentIdx', currentSegmentIdx.toString());
+                updateNavigationButtons();
+                updateSpeechButtonStatesCloudTTS(false, false); // Initial state for new segment
+            }
+
+            function updateNavigationButtons() {
+                prevButton.disabled = currentSegmentIdx <= 0;
+                nextButton.disabled = currentSegmentIdx >= textSegments.length - 1 || textSegments.length === 0;
+                readButton.disabled = textSegments.length === 0; // Disable read if no text
+            }
+
+            // --- Google Cloud TTS Functionality ---
+
+            function updateSpeechButtonStatesCloudTTS(isPlaying, isPaused) {
+                readButton.textContent = isPlaying ? 'Stop Reading' : 'Read Aloud';
+                pauseButton.disabled = !isPlaying || isPaused;
+                resumeButton.disabled = !isPaused || !isPlaying; // Resume only if playing and paused
+                readButton.disabled = textSegments.length === 0; // Always check if text is loaded
+            }
+
+            async function readAloudCloudTTS() {
+                if (!googleTtsApiKey) {
+                    updateApiStatus(googleTtsApiKeyStatusDiv, "Google Cloud TTS API Key not set.", 'error');
+                    alert("Please set your Google Cloud TTS API Key in the Controls pane.");
+                    return;
+                }
+                if (textSegments.length === 0 || currentSegmentIdx < 0 || currentSegmentIdx >= textSegments.length) {
+                    updateApiStatus(googleTtsApiKeyStatusDiv, "No text to read.", 'info');
+                    return;
+                }
+
+                const textToSpeak = mainReadingArea.textContent || mainReadingArea.innerText;
+                if (!textToSpeak.trim()) {
+                    updateApiStatus(googleTtsApiKeyStatusDiv, "Current segment is empty.", 'info');
+                    return;
+                }
+
+                updateApiStatus(googleTtsApiKeyStatusDiv, "Synthesizing audio...", 'info');
+                readButton.disabled = true; // Disable while processing
+                pauseButton.disabled = true;
+                resumeButton.disabled = true;
+
+                const CLOUD_TTS_API_KEY = googleTtsApiKey;
+                const ttsApiUrl = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${CLOUD_TTS_API_KEY}`;
+                
+                // Map pitchSlider (0-2) to Google Cloud TTS pitch (-20 to +20)
+                // Slider 1.0 is neutral (0 pitch).
+                // (sliderVal - 1) * 10 maps 0 -> -10, 1 -> 0, 2 -> +10.
+                const pitchValueApi = (parseFloat(pitchSlider.value) - 1) * 10;
+
+                const requestBody = {
+                    input: { text: textToSpeak },
+                    voice: {
+                        languageCode: "en-US",
+                        name: "en-US-Chirp3-HD-Zephyr"
+                    },
+                    audioConfig: {
+                        audioEncoding: "MP3",
+                        speakingRate: parseFloat(rateSlider.value),
+                        pitch: pitchValueApi
+                    }
+                };
+
+                try {
+                    const response = await fetch(ttsApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error("Google Cloud TTS API Error:", errorData);
+                        const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
+                        updateApiStatus(googleTtsApiKeyStatusDiv, `TTS API Error: ${errorMessage}`, 'error');
+                        readButton.disabled = textSegments.length === 0; // Re-enable based on text loaded
+                        updateSpeechButtonStatesCloudTTS(false, false); // Reset states
+                        return;
+                    }
+
+                    const data = await response.json();
+                    if (data.audioContent) {
+                        playBase64Audio(data.audioContent);
+                        updateApiStatus(googleTtsApiKeyStatusDiv, "Audio ready.", 'success');
+                    } else {
+                        updateApiStatus(googleTtsApiKeyStatusDiv, "No audio content received.", 'error');
+                        readButton.disabled = textSegments.length === 0;
+                        updateSpeechButtonStatesCloudTTS(false, false);
+                    }
+                } catch (error) {
+                    console.error("Error calling Google Cloud TTS API:", error);
+                    updateApiStatus(googleTtsApiKeyStatusDiv, `Network or fetch error: ${error.message}`, 'error');
+                    readButton.disabled = textSegments.length === 0;
+                    updateSpeechButtonStatesCloudTTS(false, false);
+                }
+            }
+
+            function playBase64Audio(base64String) {
+                stopReadingCloudTTS(); // Ensure any previous audio/blob is cleared
+
+                try {
+                    const byteCharacters = atob(base64String);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+
+                    cloudAudioPlayer.src = audioUrl;
+                    cloudAudioPlayer.play().catch(e => {
+                        console.error("Error playing audio:", e);
+                        updateApiStatus(googleTtsApiKeyStatusDiv, `Error playing audio: ${e.message}`, 'error');
+                        updateSpeechButtonStatesCloudTTS(false, false);
+                    });
+                } catch (e) {
+                    console.error("Error processing base64 audio:", e);
+                    updateApiStatus(googleTtsApiKeyStatusDiv, `Error processing audio data: ${e.message}`, 'error');
+                    updateSpeechButtonStatesCloudTTS(false, false);
+                }
+            }
+
+            function pauseReadingCloudTTS() {
+                if (!cloudAudioPlayer.paused && cloudAudioPlayer.src) {
+                    cloudAudioPlayer.pause();
+                }
+            }
+
+            function resumeReadingCloudTTS() {
+                if (cloudAudioPlayer.paused && cloudAudioPlayer.src) {
+                    cloudAudioPlayer.play().catch(e => {
+                         console.error("Error resuming audio:", e);
+                         updateApiStatus(googleTtsApiKeyStatusDiv, `Error resuming: ${e.message}`, 'error');
+                    });
+                }
+            }
+
+            function stopReadingCloudTTS() {
+                cloudAudioPlayer.pause();
+                if (cloudAudioPlayer.src && cloudAudioPlayer.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(cloudAudioPlayer.src);
+                }
+                cloudAudioPlayer.src = '';
+                cloudAudioPlayer.currentTime = 0;
+                updateSpeechButtonStatesCloudTTS(false, false);
+            }
+
+            // Event listeners for the cloudAudioPlayer
+            cloudAudioPlayer.onplay = () => updateSpeechButtonStatesCloudTTS(true, false);
+            cloudAudioPlayer.onpause = () => {
+                // onpause is triggered by both user pause and when audio ends naturally.
+                // If currentTime is very close to duration, it means it ended.
+                if (cloudAudioPlayer.currentTime < cloudAudioPlayer.duration - 0.1) {
+                     updateSpeechButtonStatesCloudTTS(true, true); // User paused
+                } else {
+                     updateSpeechButtonStatesCloudTTS(false, false); // Audio ended
+                }
+            };
+            cloudAudioPlayer.onended = () => {
+                updateSpeechButtonStatesCloudTTS(false, false);
+                updateApiStatus(googleTtsApiKeyStatusDiv, "Playback finished.", 'info');
+            };
+            cloudAudioPlayer.onerror = (e) => {
+                console.error("Audio Player Error:", e);
+                updateApiStatus(googleTtsApiKeyStatusDiv, `Audio player error. Check console.`, 'error');
+                stopReadingCloudTTS(); // Reset state on player error
+            };
+
+
+            // Update Rate/Pitch Slider Listeners
+            rateSlider.addEventListener('input', () => {
+                rateValue.textContent = parseFloat(rateSlider.value).toFixed(1);
+                // New rate will apply on next synthesis for Cloud TTS
+            });
+            pitchSlider.addEventListener('input', () => {
+                pitchValue.textContent = parseFloat(pitchSlider.value).toFixed(1);
+                // New pitch will apply on next synthesis for Cloud TTS
+            });
+
+
+            // --- Text Selection & Contextual Actions ---
+            mainReadingArea.addEventListener('mouseup', (event) => {
+                if (selectionActionPopup.contains(event.target)) {
+                    return;
+                }
+                const selection = window.getSelection();
+                if (selection && selection.toString().trim() !== "" && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    if (mainReadingArea.contains(range.commonAncestorContainer)) {
+                        currentSelection = { range: range.cloneRange(), text: selection.toString().trim() };
+                        positionSelectionPopup();
+                        selectionActionPopup.style.display = 'block';
+                        return;
+                    }
+                }
+                selectionActionPopup.style.display = 'none';
+                currentSelection = null;
+            });
+
+            document.addEventListener('click', (event) => {
+                if (selectionActionPopup.style.display === 'block') {
+                    if (!selectionActionPopup.contains(event.target) && !mainReadingArea.contains(event.target)) {
+                        selectionActionPopup.style.display = 'none';
+                    }
+                }
+            });
+
+            function positionSelectionPopup() {
+                if (!currentSelection || !currentSelection.range || !selectionActionPopup) return;
+                const rangeRect = currentSelection.range.getBoundingClientRect();
+                const popup = selectionActionPopup;
+                popup.style.visibility = 'hidden';
+                popup.style.display = 'block'; // Make it block to measure
+                const popupWidth = popup.offsetWidth;
+                const popupHeight = popup.offsetHeight;
+
+                // Position relative to the viewport, then add scroll offsets for absolute positioning
+                let popupTop = rangeRect.bottom + window.scrollY + 5;
+                let popupLeft = rangeRect.left + window.scrollX + (rangeRect.width / 2) - (popupWidth / 2);
+
+                // Boundary checks against the document dimensions (if reader pane scrolls)
+                // or window dimensions if reader pane doesn't scroll much.
+                // For simplicity, using window dimensions for now.
+                if (popupTop + popupHeight > window.innerHeight + window.scrollY) {
+                    popupTop = rangeRect.top + window.scrollY - popupHeight - 5;
+                }
+                if (popupTop < window.scrollY) { // Ensure it's not above the viewport
+                    popupTop = window.scrollY + 5;
+                }
+                if (popupLeft + popupWidth > window.innerWidth + window.scrollX) {
+                    popupLeft = window.innerWidth + window.scrollX - popupWidth - 5;
+                }
+                if (popupLeft < window.scrollX) { // Ensure it's not left of the viewport
+                    popupLeft = window.scrollX + 5;
+                }
+
+                popup.style.left = `${popupLeft}px`;
+                popup.style.top = `${popupTop}px`;
+                popup.style.visibility = 'visible';
+            }
+
+
+            // --- LLM-Powered Q&A ---
+            if (geminiApiKey) {
+                geminiApiKeyInput.value = geminiApiKey;
+                updateApiStatus(apiKeyStatusDiv, 'Gemini API Key loaded from storage.', 'success');
+            } else {
+                updateApiStatus(apiKeyStatusDiv, 'Gemini API Key not set. Q&A feature will be unavailable.', 'info');
+            }
+
+            setGeminiApiKeyButton.addEventListener('click', () => {
+                const key = geminiApiKeyInput.value.trim();
+                if (key) {
+                    geminiApiKey = key;
+                    localStorage.setItem('projectNoorGeminiApiKey', geminiApiKey);
+                    updateApiStatus(apiKeyStatusDiv, 'Gemini API Key set successfully!', 'success');
+                } else {
+                    localStorage.removeItem('projectNoorGeminiApiKey');
+                    geminiApiKey = '';
+                    updateApiStatus(apiKeyStatusDiv, 'Gemini API Key cleared. Q&A feature will be unavailable.', 'info');
+                }
+            });
+
+            async function getGeminiExplanation(selectedText, userQuestion) {
+                if (!geminiApiKey) {
+                    return { error: "API Key for Gemini is not set. Please configure it in the Controls pane.", type: 'error' };
+                }
+                const currentQuestion = userQuestion || questionInput.value.trim();
+                if (!selectedText && !currentQuestion) {
+                     return { error: "Please provide selected text or type a question.", type: 'warning' };
+                }
+                const MODEL_NAME = "gemini-1.0-pro"; // or "gemini-pro"
+                const API_VERSION = "v1beta";
+                const API_URL = `https://generativelanguage.googleapis.com/${API_VERSION}/models/${MODEL_NAME}:generateContent?key=${geminiApiKey}`;
+                const requestBody = {
+                    contents: [{
+                        parts: [{
+                            text: `You are an expert reading companion (named Noor). Given the following selected text from a document and a user's question, provide a clear, concise, and helpful explanation or answer. If the question is about defining a term in the selected text, provide the definition. If the question asks for context, provide relevant context. Aim for answers under 200 words unless more detail is explicitly requested.\n\nSelected Text: "${selectedText || 'N/A'}"\n\nUser's Question: "${currentQuestion}"\n\nAnswer:`
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.4,
+                        maxOutputTokens: 350
+                    }
+                };
+                answerDisplayArea.innerHTML = `<p class="api-loading-message">Asking Noor... please wait.</p>`;
+                submitQuestionButton.disabled = true;
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    let responseData;
+                    try { responseData = await response.json(); }
+                    catch (jsonError) {
+                        console.error('Gemini API - Non-JSON response:', await response.text());
+                        return { error: `API Error (${response.status}): Invalid response format. Check console.`, type: 'error' };
+                    }
+                    if (!response.ok) {
+                        console.error('Gemini API Error Details:', responseData);
+                        let userMessage = `API Error (${response.status}): ${responseData?.error?.message || response.statusText || 'Unknown API error'}`;
+                        return { error: userMessage, type: 'error' };
+                    }
+                    console.log("Gemini API Success Response:", responseData);
+                    if (responseData.promptFeedback && responseData.promptFeedback.blockReason) {
+                        const blockMessage = `Prompt blocked. Reason: ${responseData.promptFeedback.blockReason}.`;
+                        return { error: blockMessage, type: 'error' };
+                    }
+                    const explanation = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!explanation) {
+                        let noContentMessage = "No explanation received or response was empty.";
+                        const finishReason = responseData.candidates?.[0]?.finishReason;
+                        if (finishReason && finishReason !== 'STOP') { noContentMessage += ` AI stopped due to: ${finishReason}.`; }
+                        return { error: noContentMessage, type: 'error' };
+                    }
+                    return { answer: explanation };
+                } catch (error) {
+                    console.error("Error calling Gemini API (fetch/network level):", error);
+                    return { error: `Network or fetch error: ${error.message}.`, type: 'error' };
+                } finally {
+                    submitQuestionButton.disabled = false;
+                }
+            }
+
+            submitQuestionButton.addEventListener('click', async () => {
+                const question = questionInput.value.trim();
+                const contextText = selectedTextDisplay.textContent;
+                if (!question && !contextText) {
+                    answerDisplayArea.innerHTML = `<p class="api-warning-message">Please select text or enter a question.</p>`;
+                    return;
+                }
+                const result = await getGeminiExplanation(contextText, question);
+                if (result.answer) {
+                    answerDisplayArea.innerHTML = `<p>${escapeHtml(result.answer)}</p>`;
+                } else if (result.error) {
+                    const messageClass = (result.type === 'warning') ? 'api-warning-message' : 'api-error-message';
+                    answerDisplayArea.innerHTML = `<p class="${messageClass}">${escapeHtml(result.error)}</p>`;
+                } else {
+                     answerDisplayArea.innerHTML = `<p class="api-error-message">Unexpected issue processing AI response.</p>`;
+                }
+            });
+
+            askQuestionButton.addEventListener('click', () => {
+                if (!currentSelection || !currentSelection.text) return;
+                selectionActionPopup.style.display = 'none';
+                selectedTextDisplay.textContent = currentSelection.text;
+                questionInput.value = '';
+                answerDisplayArea.innerHTML = '';
+                qaModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                questionInput.focus();
+            });
+
+            closeQaModalButton.addEventListener('click', () => {
+                qaModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                currentSelection = null;
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == qaModal) {
+                    qaModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    currentSelection = null;
+                }
+                 if (event.target == noteInputModal) {
+                    closeNoteModal();
+                }
+            });
+
+
+            // --- Integrated Modal Note Input ---
+            addNoteButton.addEventListener('click', () => {
+                if (!currentSelection || !currentSelection.text) return;
+                tempNoteSelectionText = currentSelection.text;
+                tempNoteSelectionRange = currentSelection.range.cloneRange();
+                noteSelectedTextPreview.textContent = tempNoteSelectionText;
+                noteTextArea.value = '';
+                noteTagsInput.value = '';
+                noteInputModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                noteTextArea.focus();
+                selectionActionPopup.style.display = 'none';
+                currentSelection = null;
+            });
+
+            saveNoteButton.addEventListener('click', () => {
+                const userNoteText = noteTextArea.value.trim();
+                const tagsInput = noteTagsInput.value.trim();
+                if (!userNoteText) {
+                    alert("Note text cannot be empty.");
+                    noteTextArea.focus();
+                    return;
+                }
+                if (!tempNoteSelectionRange || !tempNoteSelectionText) {
+                    console.error("Error saving note: tempNoteSelectionRange or tempNoteSelectionText is missing.");
+                    alert("An error occurred saving the note context. Please try selecting text and adding the note again.");
+                    closeNoteModal();
+                    return;
+                }
+                const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag) : [];
+                const highlightId = `note-highlight-${noteHighlightCounter++}`;
+                let actualHighlightApplied = false;
+                try {
+                    if (mainReadingArea.contains(tempNoteSelectionRange.commonAncestorContainer)) {
+                        const span = document.createElement('span');
+                        span.classList.add('highlighted-note-text');
+                        span.id = highlightId;
+                        span.title = "Note attached. Click to see in Notes panel."; // Add title for hover
+                        span.addEventListener('click', () => { // Add click to scroll to note
+                            const noteInPanel = notesContainer.querySelector(`.note-item[data-highlight-id="${highlightId}"]`);
+                            if (noteInPanel) {
+                                noteInPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                noteInPanel.style.backgroundColor = '#cce5ff'; // Temporary highlight
+                                setTimeout(() => { noteInPanel.style.backgroundColor = ''; }, 2000);
+                            }
+                        });
+                        tempNoteSelectionRange.surroundContents(span);
+                        textSegments[currentSegmentIdx] = mainReadingArea.innerHTML;
+                        localStorage.setItem('projectNoorTextSegments', JSON.stringify(textSegments));
+                        actualHighlightApplied = true;
+                    } else {
+                         console.warn("Note highlight couldn't be applied: selection range no longer valid.");
+                         alert("Note saved, but text couldn't be highlighted as content changed.");
+                    }
+                } catch (e) {
+                    console.error("Error applying highlight:", e);
+                    alert("Could not highlight selection. Note added without highlight.");
+                }
+                const newNote = {
+                    id: `note-${Date.now()}`,
+                    segmentIndex: currentSegmentIdx,
+                    selectedOriginalText: tempNoteSelectionText,
+                    highlightId: actualHighlightApplied ? highlightId : null,
+                    noteText: userNoteText,
+                    tags: tags,
+                    linkedNoteIds: []
+                };
+                userNotes.push(newNote);
+                saveNotes();
+                renderAllNotes();
+                closeNoteModal();
+            });
+
+            function closeNoteModal() {
+                noteInputModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                tempNoteSelectionText = null;
+                tempNoteSelectionRange = null;
+            }
+            closeNoteInputModalButton.addEventListener('click', closeNoteModal);
+
+            // --- Note Rendering, Linking, Search ---
+             function applyHighlightsToSegment(segmentHtml, segmentIdx) {
+                // If highlights are saved as part of HTML, this function may not need to do much extra,
+                // but we can ensure event listeners are re-attached if needed, or classes.
+                // For now, assuming the saved HTML includes the spans correctly.
+                // We will add click listeners to highlights when the segment is shown.
+                let tempDiv = document.createElement('div');
+                tempDiv.innerHTML = segmentHtml;
+                const highlightSpans = tempDiv.querySelectorAll('.highlighted-note-text');
+                highlightSpans.forEach(span => {
+                    const spanId = span.id;
+                    if (spanId) {
+                        span.title = "Note attached. Click to see in Notes panel.";
+                        span.addEventListener('click', (e) => {
+                            e.stopPropagation(); // Prevent triggering text selection popup
+                            const noteInPanel = notesContainer.querySelector(`.note-item[data-highlight-id="${spanId}"]`);
+                            if (noteInPanel) {
+                                noteInPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                noteInPanel.style.backgroundColor = '#cce5ff';
+                                setTimeout(() => { noteInPanel.style.backgroundColor = ''; }, 2000);
+                            }
+                        });
+                    }
+                });
+                return tempDiv.innerHTML;
+            }
+
+            function renderNoteToDOM(note) {
+                const noteEl = document.createElement('div');
+                noteEl.classList.add('note-item');
+                noteEl.dataset.noteId = note.id;
+                if (note.highlightId) { noteEl.dataset.highlightId = note.highlightId; } // For linking highlight span click to note item
+
+                const selectedTextPreview = note.selectedOriginalText ? `<em>Selected: "${escapeHtml(note.selectedOriginalText.substring(0, 70))}${note.selectedOriginalText.length > 70 ? '...' : ''}"</em><br>` : '';
+                const tagsHTML = note.tags.length > 0 ? `<div class="note-tags">Tags: ${note.tags.map(t => `<span>${escapeHtml(t)}</span>`).join(' ')}</div>` : '';
+                let linksHTML = '';
+                if (note.linkedNoteIds && note.linkedNoteIds.length > 0) {
+                    const linkedNotesInfo = note.linkedNoteIds.map(linkedId => {
+                        const linkedNote = userNotes.find(n => n.id === linkedId);
+                        return linkedNote ? `<span class="linked-note-ref" data-linked-id="${linkedId}" title="Jump to Note ${linkedId.substring(5, 10)}">${linkedId.substring(5, 10)}</span>` : `<span title="Linked note not found"><s>${linkedId.substring(5, 10)}</s></span>`;
+                    }).join(', ');
+                    linksHTML = `<div class="note-links">Links: ${linkedNotesInfo}</div>`;
+                }
+                noteEl.innerHTML = `
+                    <div class="note-meta">
+                        <span class="note-id" title="Note ID: ${note.id}">ID: ${note.id.substring(5, 10)} (P: ${note.segmentIndex + 1})</span>
+                        <span> <button class="small-button delete-note-btn" data-note-id="${note.id}" title="Delete Note">Delete</button>
+                            <button class="small-button link-note-btn" data-note-id="${note.id}" title="Link this note to another">Link To...</button>
+                            ${note.highlightId ? `<button class="small-button jump-to-highlight-btn" data-highlight-id="${note.highlightId}" data-segment-index="${note.segmentIndex}" title="Scroll to highlighted text">View Text</button>` : ''}
+                        </span>
+                    </div>
+                    <strong>Note:</strong> <span class="note-content">${escapeHtml(note.noteText)}</span><br>
+                    ${selectedTextPreview}
+                    ${tagsHTML}
+                    ${linksHTML}
+                `;
+                return noteEl;
+            }
+
+            function renderAllNotes(notesToRender = userNotes) {
+                notesContainer.innerHTML = '';
+                if (notesToRender.length === 0) {
+                    notesContainer.innerHTML = searchNotesInput.value.trim() ? '<p>No notes found matching your search.</p>' : '<p>Your notes will appear here. Add notes by selecting text in the reading area.</p>';
+                    return;
+                }
+                notesToRender.sort((a,b) => b.id.localeCompare(a.id));
+                notesToRender.forEach(note => {
+                    notesContainer.appendChild(renderNoteToDOM(note));
+                });
+            }
+
+            function handleNoteActionClick(event) {
+                const target = event.target;
+                const noteItemElement = target.closest('.note-item');
+                if (!noteItemElement) return;
+                const noteId = noteItemElement.dataset.noteId;
+
+
+                if (target.classList.contains('delete-note-btn')) {
+                    if (confirm(`Are you sure you want to delete note ${noteId.substring(5,10)}? This cannot be undone.`)) {
+                        const noteToDelete = userNotes.find(n => n.id === noteId);
+                        if (noteToDelete && noteToDelete.highlightId) {
+                            // Remove highlight from current segment if it's the one displayed
+                            if (noteToDelete.segmentIndex === currentSegmentIdx) {
+                                const highlightSpan = mainReadingArea.querySelector(`#${noteToDelete.highlightId}`);
+                                if (highlightSpan && highlightSpan.parentNode) {
+                                    while (highlightSpan.firstChild) {
+                                        highlightSpan.parentNode.insertBefore(highlightSpan.firstChild, highlightSpan);
+                                    }
+                                    highlightSpan.parentNode.removeChild(highlightSpan);
+                                    textSegments[currentSegmentIdx] = mainReadingArea.innerHTML; // Update current segment's HTML
+                                }
+                            } else { // If highlight is in a non-displayed segment, modify the stored HTML
+                                let segmentHtml = textSegments[noteToDelete.segmentIndex];
+                                if (segmentHtml) {
+                                    let tempDiv = document.createElement('div');
+                                    tempDiv.innerHTML = segmentHtml;
+                                    const highlightSpan = tempDiv.querySelector(`#${noteToDelete.highlightId}`);
+                                    if (highlightSpan && highlightSpan.parentNode) {
+                                        while (highlightSpan.firstChild) {
+                                            highlightSpan.parentNode.insertBefore(highlightSpan.firstChild, highlightSpan);
+                                        }
+                                        highlightSpan.parentNode.removeChild(highlightSpan);
+                                        textSegments[noteToDelete.segmentIndex] = tempDiv.innerHTML;
+                                    }
+                                }
+                            }
+                            localStorage.setItem('projectNoorTextSegments', JSON.stringify(textSegments));
+                        }
+                        userNotes = userNotes.filter(n => n.id !== noteId);
+                        userNotes.forEach(n => { n.linkedNoteIds = n.linkedNoteIds.filter(linkedId => linkedId !== noteId); });
+                        saveNotes();
+                        renderAllNotes(searchNotesInput.value.trim() ? userNotes.filter( /* re-apply search filter */ ) : userNotes);
+                    }
+                }
+                else if (target.classList.contains('link-note-btn')) { linkNote(noteId); }
+                else if (target.classList.contains('jump-to-highlight-btn')) {
+                    const highlightIdToJump = target.dataset.highlightId;
+                    const segmentIdxToJump = parseInt(target.dataset.segmentIndex, 10);
+                    if (segmentIdxToJump !== currentSegmentIdx) { showSegment(segmentIdxToJump); }
+                    setTimeout(() => { // Ensure segment is rendered
+                        const element = document.getElementById(highlightIdToJump);
+                        if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            element.style.transition = 'outline 0.1s ease-in-out';
+                            element.style.outline = '2px solid #007bff';
+                            setTimeout(() => { element.style.outline = ''; }, 1500);
+                        } else { alert("Could not find highlighted text. It might be on a different paragraph or removed."); }
+                    }, 100);
+                }
+                 else if (target.classList.contains('linked-note-ref')) {
+                     const linkedNoteId = target.dataset.linkedId;
+                     const linkedNoteElement = notesContainer.querySelector(`.note-item[data-note-id="${linkedNoteId}"]`);
+                     if (linkedNoteElement) {
+                         linkedNoteElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                         linkedNoteElement.style.transition = 'background-color 0.2s ease-in-out';
+                         linkedNoteElement.style.backgroundColor = '#cce5ff';
+                         setTimeout(() => { linkedNoteElement.style.backgroundColor = ''; }, 1500);
+                     } else { alert(`Linked note ${linkedNoteId.substring(5,10)} not found in the current view.`); }
+                 }
+            }
+
+            function linkNote(sourceNoteId) {
+                const sourceNoteShortId = sourceNoteId.substring(5, 10);
+                const targetNoteShortIdPrompt = prompt(`Enter the 5-digit ID (visible on the note) of the note you want to link TO note ${sourceNoteShortId}:`);
+                if (!targetNoteShortIdPrompt) return;
+                const targetShortId = targetNoteShortIdPrompt.trim();
+
+                // Find full ID by matching the end part.
+                const targetNote = userNotes.find(n => n.id.endsWith(targetShortId) && n.id.length > 5); // ensure it's not just matching prefix
+                if (!targetNote) { alert(`Note with ID ending in "${targetShortId}" not found.`); return; }
+                const targetFullNoteId = targetNote.id;
+
+                if (targetFullNoteId === sourceNoteId) { alert("Cannot link a note to itself."); return; }
+
+                const sourceNote = userNotes.find(n => n.id === sourceNoteId);
+                if (sourceNote) {
+                    if (!sourceNote.linkedNoteIds) sourceNote.linkedNoteIds = [];
+                    if (sourceNote.linkedNoteIds.includes(targetFullNoteId)) { alert(`Note ${sourceNoteShortId} is already linked to ${targetShortId}.`); return; }
+
+                    sourceNote.linkedNoteIds.push(targetFullNoteId);
+                    saveNotes();
+                    renderAllNotes(searchNotesInput.value.trim() ? userNotes.filter( /* re-apply search */) : userNotes);
+                    alert(`Note ${sourceNoteShortId} linked to ${targetShortId}.`);
+                } else { alert("Error: source note not found. This should not happen."); }
+            }
+
+            notesContainer.addEventListener('click', handleNoteActionClick);
+
+            searchNotesInput.addEventListener('input', () => {
+                const searchTerm = searchNotesInput.value.toLowerCase().trim();
+                if (!searchTerm) { renderAllNotes(userNotes); return; }
+                const filteredNotes = userNotes.filter(note => {
+                    return (note.noteText && note.noteText.toLowerCase().includes(searchTerm)) ||
+                           (note.selectedOriginalText && note.selectedOriginalText.toLowerCase().includes(searchTerm)) ||
+                           (note.tags && note.tags.some(tag => tag.toLowerCase().includes(searchTerm)));
+                });
+                renderAllNotes(filteredNotes);
+            });
+
+
+            // --- Event Listeners Setup ---
+            loadTextButton.addEventListener('click', loadText);
+
+            readButton.addEventListener('click', () => {
+                if (cloudAudioPlayer.src && !cloudAudioPlayer.paused) { // If playing
+                    stopReadingCloudTTS();
+                } else if (cloudAudioPlayer.src && cloudAudioPlayer.paused) { // If paused (this case might be better handled by resume button)
+                    resumeReadingCloudTTS(); // Or stop and restart? Let's stick to stop for simplicity if "Read Aloud" is clicked while paused.
+                                           // Actually, better: if paused, clicking "Read Aloud" (which says Stop) should stop it.
+                                           // This is covered by the first 'if' if text is "Stop Reading"
+                                           // If it says "Read Aloud" (e.g. after finishing), it should synthesize.
+                    readAloudCloudTTS();
+                }
+                else { // Not playing, not paused (i.e. stopped or initial state)
+                    readAloudCloudTTS();
+                }
+            });
+            pauseButton.addEventListener('click', pauseReadingCloudTTS);
+            resumeButton.addEventListener('click', resumeReadingCloudTTS);
+
+            prevButton.addEventListener('click', () => showSegment(currentSegmentIdx - 1));
+            nextButton.addEventListener('click', () => showSegment(currentSegmentIdx + 1));
+
+            clearStoredDataButton.addEventListener('click', () => {
+                if (confirm("Are you sure you want to clear ALL stored data (text, notes, ALL API keys)? This cannot be undone.")) {
+                    stopReadingCloudTTS(); // Stop audio
+                    localStorage.removeItem('projectNoorTextSegments');
+                    localStorage.removeItem('projectNoorCurrentSegmentIdx');
+                    localStorage.removeItem('projectNoorUserNotes');
+                    localStorage.removeItem('projectNoorGeminiApiKey');
+                    localStorage.removeItem('projectNoorGoogleTtsApiKey'); // Clear Google TTS Key
+
+                    textInputArea.value = '';
+                    textSegments = [];
+                    currentSegmentIdx = 0;
+                    userNotes = [];
+                    geminiApiKey = '';
+                    geminiApiKeyInput.value = '';
+                    googleTtsApiKey = ''; // Clear variable
+                    googleTtsApiKeyInput.value = ''; // Clear input field
+
+                    mainReadingArea.innerHTML = "Welcome to Project Noor. Please load some text using the controls on the left.";
+                    segmentStatus.textContent = "No text loaded.";
+                    updateNavigationButtons();
+                    updateSpeechButtonStatesCloudTTS(false, false); // Update for Cloud TTS
+                    renderAllNotes();
+                    updateApiStatus(apiKeyStatusDiv, 'Gemini API Key not set.', 'info');
+                    updateApiStatus(googleTtsApiKeyStatusDiv, 'Google Cloud TTS API Key not set.', 'info'); // Update TTS key status
+                    alert("All stored data has been cleared.");
+                }
+            });
+
+            // Google Cloud TTS API Key Setup
+            if (googleTtsApiKey) {
+                googleTtsApiKeyInput.value = googleTtsApiKey;
+                updateApiStatus(googleTtsApiKeyStatusDiv, 'Google Cloud TTS API Key loaded.', 'success');
+            } else {
+                updateApiStatus(googleTtsApiKeyStatusDiv, 'Google Cloud TTS API Key not set.', 'info');
+            }
+
+            setGoogleTtsApiKeyButton.addEventListener('click', () => {
+                const key = googleTtsApiKeyInput.value.trim();
+                if (key) {
+                    googleTtsApiKey = key;
+                    localStorage.setItem('projectNoorGoogleTtsApiKey', googleTtsApiKey);
+                    updateApiStatus(googleTtsApiKeyStatusDiv, 'Google Cloud TTS API Key Set.', 'success');
+                } else {
+                    localStorage.removeItem('projectNoorGoogleTtsApiKey');
+                    googleTtsApiKey = '';
+                    updateApiStatus(googleTtsApiKeyStatusDiv, 'Google Cloud TTS API Key Cleared.', 'info');
+                }
+            });
+
+
+            // --- Initial Setup ---
+            // Browser SpeechSynthesis no longer primary, so its check is less critical here.
+            // Cloud TTS will manage its own readiness via API key.
+            updateSpeechButtonStatesCloudTTS(false, false); // Initial state for Cloud TTS buttons
+
+            const storedSegmentsData = localStorage.getItem('projectNoorTextSegments');
+            const storedIdx = localStorage.getItem('projectNoorCurrentSegmentIdx');
+            if (storedSegmentsData) {
+                try {
+                    textSegments = JSON.parse(storedSegmentsData);
+                    currentSegmentIdx = storedIdx ? parseInt(storedIdx, 10) : 0;
+                    if (!Array.isArray(textSegments)) textSegments = [];
+                    if (isNaN(currentSegmentIdx) || currentSegmentIdx < 0 || currentSegmentIdx >= textSegments.length) currentSegmentIdx = 0;
+
+                    if (textSegments.length > 0 && currentSegmentIdx < textSegments.length) {
+                         showSegment(currentSegmentIdx);
+                    } else if (textSegments.length > 0 && currentSegmentIdx >= textSegments.length) {
+                        currentSegmentIdx = 0; // Reset index if out of bounds but segments exist
+                        showSegment(currentSegmentIdx);
+                    }
+                    else { // Stored data was empty array or invalid
+                        textInputArea.value = PRE_POPULATED_TEXT; loadText();
+                    }
+                } catch (e) {
+                     console.error("Error parsing stored text:", e);
+                     textInputArea.value = PRE_POPULATED_TEXT; loadText();
+                }
+            } else { textInputArea.value = PRE_POPULATED_TEXT; loadText(); }
+
+            renderAllNotes();
+            updateNavigationButtons(); // Call after loadText potentially sets textSegments.length
+            // updateSpeechButtonStatesCloudTTS(false, false); // Already called by showSegment or loadText
+
+        });
+    </script>
+</body>
+</html>
